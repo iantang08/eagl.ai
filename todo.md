@@ -1,26 +1,38 @@
 # eagl.ai - Production Launch Checklist
 
-## Current Status: ~80% Complete
+## Current Status: ~90% Complete
 
-The app has a solid foundation with working:
+The app is nearly ready for launch with all core features working:
 - Full onboarding flow (10 screens)
 - Authentication (signup/login)
-- Video upload with presigned URLs
+- Video upload with real progress tracking
 - AI swing analysis (MediaPipe pose detection)
 - 6 rubric scoring metrics
 - Paywall with RevenueCat integration
 - Home/Profile screens with analysis results
+- Proper error handling and validation
 
 ---
 
-## 1. REMAINING DEVELOPMENT TASKS
+## 1. COMPLETED DEVELOPMENT TASKS
 
-### Critical (Must Fix Before Launch)
+- [x] **CORS Security** - Now configurable via `CORS_ORIGINS` env var
+- [x] **Upload Progress** - Real progress feedback with percentage display
+- [x] **Error Messages** - User-friendly error messages throughout app
+- [x] **Input Validation** - File size (100MB) and duration (30s) limits
 
-- [ ] **CORS Security** - Change `allow_origins=["*"]` to specific domains in `services/api/app/main.py:42`
-- [ ] **Upload Progress** - Add real progress feedback in `HomeScreen.tsx` (currently shows fixed values)
-- [ ] **Error Messages** - Improve user-facing error messages throughout the app
-- [ ] **Input Validation** - Add file size limits (e.g., max 100MB) and duration limits (e.g., max 30 seconds)
+---
+
+## 2. REMAINING TASKS BEFORE LAUNCH
+
+### Required for Launch
+
+- [ ] **RevenueCat Setup** - Configure subscriptions (see Section 3)
+- [ ] **App Icons** - Create all required icon sizes in `Images.xcassets`
+- [ ] **Launch Screen** - Design launch screen in `LaunchScreen.storyboard`
+- [ ] **Privacy Policy** - Create privacy policy page (required for subscriptions)
+- [ ] **Test on Physical Device** - Full end-to-end testing (see Section 5)
+- [ ] **Deploy Backend** - Set up production API (see Section 4)
 
 ### Nice to Have (Post-Launch)
 
@@ -32,7 +44,7 @@ The app has a solid foundation with working:
 
 ---
 
-## 2. REVENUECAT SETUP
+## 3. REVENUECAT SETUP
 
 ### Step 1: Create RevenueCat Account
 1. Go to https://www.revenuecat.com and create an account
@@ -85,7 +97,7 @@ DEV_SKIP_PAYWALL=false
 
 ---
 
-## 3. BACKEND PRODUCTION SETUP
+## 4. BACKEND PRODUCTION SETUP
 
 ### Option A: AWS Deployment (Recommended)
 
@@ -116,6 +128,9 @@ AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=<your-key>
 AWS_SECRET_ACCESS_KEY=<your-secret>
 
+# CORS - your production domain
+CORS_ORIGINS=https://app.eagl.ai,https://eagl.ai
+
 # RevenueCat (for webhook validation)
 REVENUECAT_WEBHOOK_SECRET=<from-revenuecat-dashboard>
 
@@ -130,13 +145,13 @@ openssl rand -hex 32
 ```
 
 ### Option B: Simpler Alternatives
-- **Railway.app** - Easy Docker deployment
+- **Railway.app** - Easy Docker deployment (~$5-20/month)
 - **Render.com** - Managed containers + PostgreSQL
 - **Fly.io** - Edge deployment
 
 ---
 
-## 4. TESTING ON PHYSICAL IPHONE
+## 5. TESTING ON PHYSICAL IPHONE
 
 ### Prerequisites
 - Apple Developer account ($99/year for App Store publishing)
@@ -159,6 +174,8 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 Update `apps/mobile/.env`:
 ```
 API_BASE_URL=http://YOUR_MAC_IP:8000
+DEV_MODE=true
+DEV_SKIP_PAYWALL=true
 ```
 
 Ensure backend is running:
@@ -174,31 +191,43 @@ make up
 5. First run will fail - go to iPhone Settings → General → VPN & Device Management → Trust your developer certificate
 6. Run again
 
-### Step 4: Test Camera Roll
-- Grant photo library access when prompted
-- Upload a golf swing video
-- Wait for analysis (check backend logs with `make logs`)
+### Step 4: Test Checklist
+- [ ] Complete onboarding flow
+- [ ] Create account
+- [ ] Skip paywall (dev mode) or test purchase
+- [ ] Upload a golf swing video from camera roll
+- [ ] Verify upload progress shows correctly
+- [ ] Wait for analysis to complete (~30 seconds)
+- [ ] View analysis results
+- [ ] Check all 6 rubric scores display
+- [ ] Test error scenarios (no internet, large file, etc.)
 
 ---
 
-## 5. APP STORE SUBMISSION
+## 6. APP STORE SUBMISSION
 
 ### Pre-Submission Checklist
 - [ ] Update `apps/mobile/ios/eaglai/Info.plist`:
   - `CFBundleDisplayName`: "eagl.ai"
   - `CFBundleShortVersionString`: "1.0.0"
-  - Privacy descriptions for camera/photo access
+  - `NSPhotoLibraryUsageDescription`: "eagl.ai needs access to your photos to upload swing videos for analysis."
 - [ ] Create app icons (all sizes) in `apps/mobile/ios/eaglai/Images.xcassets`
 - [ ] Create launch screen in `LaunchScreen.storyboard`
 - [ ] Test all flows on physical device
-- [ ] Disable dev flags in `.env`
-- [ ] Point to production API
+- [ ] Set production values in `.env`:
+  ```
+  API_BASE_URL=https://api.eagl.ai
+  DEV_MODE=false
+  DEV_SKIP_PAYWALL=false
+  REVENUECAT_IOS_API_KEY=appl_xxxxx
+  ```
 
 ### App Store Connect Setup
 1. Create app in App Store Connect
 2. Fill in app information:
-   - Name, subtitle, description
-   - Keywords, categories
+   - Name: eagl.ai
+   - Subtitle: AI Golf Swing Analysis
+   - Description, keywords, categories
    - Screenshots (6.5" and 5.5" required)
    - App preview video (optional but recommended)
 3. Set up subscriptions (see RevenueCat section)
@@ -214,7 +243,7 @@ make up
 
 ---
 
-## 6. PRODUCTION API KEYS SUMMARY
+## 7. PRODUCTION API KEYS SUMMARY
 
 | Service | Where to Get | Environment Variable |
 |---------|--------------|---------------------|
@@ -222,11 +251,11 @@ make up
 | AWS S3 | AWS IAM console | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
 | PostgreSQL | Your hosting provider | `DATABASE_URL` |
 | Redis | Your hosting provider | `REDIS_URL` |
-| JWT Secret | Generate yourself | `JWT_SECRET` |
+| JWT Secret | Generate: `openssl rand -hex 32` | `JWT_SECRET` |
 
 ---
 
-## 7. QUICK START COMMANDS
+## 8. QUICK START COMMANDS
 
 ### Development
 ```bash
@@ -243,18 +272,21 @@ npm start
 # In another terminal: npm run ios
 ```
 
-### Testing Production Config Locally
+### Test API Health
 ```bash
-# In apps/mobile/.env
-API_BASE_URL=https://api.eagl.ai  # Your production URL
-DEV_MODE=false
-DEV_SKIP_PAYWALL=false
-REVENUECAT_IOS_API_KEY=appl_xxxxx
+curl http://localhost:8000/health
+```
+
+### Test Signup
+```bash
+curl -X POST http://localhost:8000/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
 ```
 
 ---
 
-## 8. POST-LAUNCH MONITORING
+## 9. POST-LAUNCH MONITORING
 
 ### Recommended Services
 - **Sentry** - Error tracking (add `@sentry/react-native`)
