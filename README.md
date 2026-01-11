@@ -240,30 +240,6 @@ cd ios && pod install
 - Verify Mac firewall allows incoming connections on port 8000
 - Test with: `curl http://YOUR_MAC_IP:8000/health` from another device
 
-## RevenueCat Setup
-
-### For Production
-1. Create account at [RevenueCat](https://www.revenuecat.com)
-2. Create a new project
-3. Add iOS app with your Bundle ID
-4. Create entitlements and offerings
-5. Add your API key to `.env`: `REVENUECAT_IOS_API_KEY=appl_xxxxx`
-6. Configure App Store Connect:
-   - Create in-app purchases (subscriptions)
-   - Add them to RevenueCat products
-
-### For Development (No RevenueCat)
-Set these in your `.env`:
-```
-DEV_MODE=true
-DEV_SKIP_PAYWALL=true
-```
-
-This enables:
-- "Simulate Purchase" button on paywall
-- Backend endpoint to activate subscription without real purchase
-- Full app access for testing
-
 ## Makefile Commands
 
 | Command | Description |
